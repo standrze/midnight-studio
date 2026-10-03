@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="Explore the structure and measured layer activations of models loaded in Midnight.">
+  <title>Midnight Studio · Layer inspector</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" sizes="any">
+  <link rel="stylesheet" href="/styles.css?v=studio-shell-4">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="Midnight Studio"><img class="brand-mark" src="/midnight-mark.svg" width="23" height="23" alt="" aria-hidden="true">midnight<span class="brand-period">.</span></a>
+    <nav class="studio-nav" aria-label="Studio navigation"><a href="/" aria-current="page">Layer inspector</a><a href="/control">Model controls</a><a href="/prepare">Prepare models</a></nav>
+    <div class="connection"><span id="status-dot" class="status-dot"></span><span id="connection-status" role="status">Connecting to Midnight…</span><button id="refresh" class="icon-button" aria-label="Refresh loaded models">↻</button></div>
+  </header>
+  <main>
+    <div class="page-heading"><div><p class="eyebrow">MODEL EXPLORER</p><h1>Inside the model<span>.</span></h1></div><div class="snapshot-actions"><button id="save-snapshot" class="quiet-button" disabled>Save structure</button><button id="compare-snapshot" class="quiet-button">Compare a saved model <span aria-hidden="true">↗</span></button><input type="file" id="snapshot-file" accept="application/json,.json" hidden></div></div>
+    <div id="notice" class="notice" role="alert" hidden></div>
+    <section id="architecture-overview" class="architecture-overview" aria-label="Architecture overview" hidden></section>
+    <section id="model-summary" class="model-summary" aria-label="Loaded model"><div class="loading-state">Reading the loaded model’s structure…</div></section>
+<section class="capture-panel signal-lab" aria-label="Response comparison playback">
+<div class="signal-header"><div><p class="eyebrow">MIDNIGHT / SIGNAL LAB</p><h2>Follow the response<span>.</span></h2></div><div id="signal-live-label" class="signal-status">STRUCTURE PREVIEW · NO CAPTURE</div></div>
+<div class="signal-stage"><div class="signal-stage-grid"></div><div id="signal-scene-host"></div><div class="signal-caption"><span>01 / TOKEN</span><span>02 / RESIDUAL LAYERS</span><span>03 / NEXT TOKEN</span></div></div>
+<div class="signal-transport"><button id="play-captures" class="quiet-button" disabled>Play</button><select id="playback-site" aria-label="Playback measurement site"><option value="layer_input">Layer input</option><option value="after_attention">After attention</option></select><span id="signal-selection">Choose a layer to inspect its signal</span><span class="signal-local">● LOCAL PLAYBACK</span></div>
+<p id="playback-error" role="alert"></p>
+<div class="capture-columns"><section class="capture-run"><h3>Response A</h3><div class="capture-actions"><button id="keep-a" class="quiet-button">Keep run A</button><button id="export-a" class="quiet-button" disabled>Save capture</button><label class="capture-file">Open capture<input id="import-a" type="file" accept="application/json,.json"></label></div><div id="capture-a-content"></div></section><section class="capture-run"><h3>Response B</h3><div class="capture-actions"><button id="keep-b" class="quiet-button">Keep run B</button><button id="export-b" class="quiet-button" disabled>Save capture</button><label class="capture-file">Open capture<input id="import-b" type="file" accept="application/json,.json"></label></div><div id="capture-b-content"></div></section></div><details class="signal-method"><summary>Measurements &amp; exact values</summary><p id="playback-note" class="helper"></p><p class="helper">Ribbons are schematic connections to layer samples. Width encodes captured residual RMS on a shared scale, not attention, causal flow, or refusal likelihood. Capturing adds overhead only to explicit inspection requests. Playback makes no model calls.</p><div id="capture-flow"></div></details><details class="dataset-drawer"><summary><span>QUESTION LIBRARY</span> Refusal evaluation <span class="drawer-plus">+</span></summary><div class="dataset-body"><div class="panel-label"><span class="number-label">04</span><h2>Question dataset</h2></div><p class="helper">A small starter set for ordinary answers, false refusals, and boundaries. Expected outcomes are editable evaluation assumptions, not universal policy labels. No automatic runs. Inspection adds capture overhead; use short questions.</p><div class="capture-actions"><label>Test question <select id="dataset-item"></select></label><button id="stage-test" class="quiet-button">Stage question</button><label class="capture-file">Import JSON<input type="file" id="import-dataset" accept="application/json,.json"></label></div><details><summary>Dataset format</summary><pre>[{"id":"science","question":"Why is the sky blue?","expected":"answer"}]</pre><p class="helper">Up to 100 questions. Expected: answer, refuse, or review. Questions are imported as text and never run automatically. Exported evaluations can be reimported as datasets.</p></details><div class="capture-actions"><label>Observed response <select id="dataset-rating"><option value="unclear">Unclear / incomplete</option><option value="answer">Answered</option><option value="refuse">Refused</option></select></label><button id="record-test" class="quiet-button">Record current response</button><button id="export-results" class="quiet-button">Export dataset &amp; results</button></div><p id="dataset-status" class="helper" role="status"></p><div id="dataset-results" class="comparison-table"></div></div></details></section>
+    <div class="workspace">
+      <aside class="question-panel">
+        <div class="panel-label"><span class="number-label">01</span><h2>Ask & inspect</h2></div>
+        <form id="question-form">
+          <label for="question">Your question</label>
+          <textarea id="question" rows="5" placeholder="Why is the sky blue?" maxlength="4000">Why is the sky blue?</textarea>
+          <div class="generation-settings"><label for="max-tokens">Output token limit</label><select id="max-tokens"><option value="16">16</option><option value="32" selected>32</option><option value="64">64</option></select></div>
+          <button id="ask" class="primary-button" type="submit" disabled><span>Ask Midnight</span><span aria-hidden="true">↗</span></button>
+        </form>
+        <p id="trace-support" class="helper">Activity is measured during an inspection run.</p>
+        <section id="answer-panel" class="answer-panel" hidden><div class="panel-label"><h3>Generated text (raw)</h3><span id="answer-stop" class="small-tag"></span></div><div id="answer" class="answer-text"></div><p id="trace-meta" class="helper"></p></section>
+        <div class="reading-guide"><span class="guide-line"></span><h3>Follow the signal</h3><p>Tokens enter at the top. Each layer updates their representation before the model predicts the next token.</p><p>Choose a layer to see its modules and tensor shapes.</p></div>
+      </aside>
+      <section class="structure-panel" aria-label="Model visualization">
+        <div class="visual-toolbar"><div class="mode-switch" aria-label="View"><button id="structure-mode" class="active" aria-pressed="true">Structure</button><button id="activity-mode" aria-pressed="false" disabled>Activations</button><button id="compare-mode" aria-pressed="false" disabled>Compare</button></div><span id="map-caption" class="map-caption">Loaded layers</span></div>
+        <div id="token-controls" class="token-controls" hidden><div class="token-heading"><label for="token-position">Token <span id="token-position-label"></span></label><span id="token-phase" class="small-tag"></span></div><input id="token-position" type="range" min="0" max="0" value="0"><div class="token-selection"><code id="selected-token"></code><select id="activation-site" aria-label="Activation measurement site"><option value="layer_input">Layer input</option><option value="after_attention">After attention</option></select></div></div>
+        <details class="architecture-expander"><summary>Explore selected layer · architecture &amp; precision</summary><div id="expanded-architecture"></div></details>
+        <div id="model-maps" class="model-maps"><div class="map-empty"><div class="empty-layers" aria-hidden="true"><i></i><i></i><i></i><i></i></div><p>Waiting for a loaded model</p><span>The layer map will appear here.</span></div></div>
+        <div id="map-legend" class="map-legend"><span><i class="legend-attention"></i>Attention</span><span><i class="legend-convolution"></i>Convolution</span><span><i class="legend-mlp"></i>Experts / router</span><span class="legend-note">Other groups in mint · one mark per group</span></div>
+        <div id="measurement-note" class="measurement-note" hidden>Residual RMS, measured before normalization. Brighter layers have larger values. Channel bins aggregate hidden dimensions; they are not individual neurons.</div>
+        <div id="comparison-table" class="comparison-table" hidden></div>
+      </section>
+      <aside class="detail-panel" aria-label="Selected layer details">
+        <div class="panel-label"><span class="number-label">02</span><h2>Layer details</h2></div>
+        <div id="layer-detail" class="layer-detail"><p class="helper">Select a layer in the map to explore its structure.</p></div>
+      </aside>
+    </div>
+    <footer><span>Midnight + Hummingbird</span><span id="source-note">Structure comes from the model loaded in memory.</span></footer>
+  </main>
+</body>
+</html>

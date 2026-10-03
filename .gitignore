@@ -1,0 +1,12 @@
+.local/
+.build/
+.swiftpm/
+.DS_Store
+
+# Keep source distribution separate from local state and captures.
+**/.build/
+**/.swiftpm/
+__pycache__/
+*.pyc
+/screenshots/
+*.log
