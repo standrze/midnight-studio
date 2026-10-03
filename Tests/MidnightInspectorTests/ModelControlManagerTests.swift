@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import MidnightInspector
 
 struct ModelControlManagerTests {
@@ -8,7 +9,8 @@ struct ModelControlManagerTests {
         defer { fixture.remove() }
         let process = FakeControlChild()
         let runtime = FakeControlRuntime()
-        let manager = ModelControlManager(configuration: fixture.configuration,
+        let manager = ModelControlManager(
+            configuration: fixture.configuration,
             launcher: { _ in process }, runtime: runtime, portCheck: { _ in })
         let original = try #require(await manager.catalog().first).defaults
         let adapter = URL(fileURLWithPath: "/tmp/original-adapter")
@@ -16,7 +18,8 @@ struct ModelControlManagerTests {
         try await waitFor(manager, phase: "loaded")
         var replacement = original
         replacement.servedModelName = "rejected-model"
-        await runtime.rejectNextLoad(ModelControlError("The selected adapter is invalid.", code: "runtime_error", status: 400))
+        await runtime.rejectNextLoad(
+            ModelControlError("The selected adapter is invalid.", code: "runtime_error", status: 400))
         _ = try await manager.load(replacement, adapter: URL(fileURLWithPath: "/tmp/invalid-adapter"))
         try await waitFor(manager, phase: "loaded")
         // Check another monitor cycle, which used to overwrite the original error.
@@ -39,13 +42,15 @@ struct ModelControlManagerTests {
         defer { fixture.remove() }
         let runtime = FakeControlRuntime()
         let process = FakeControlChild()
-        let manager = ModelControlManager(configuration: fixture.configuration,
+        let manager = ModelControlManager(
+            configuration: fixture.configuration,
             launcher: { _ in process }, runtime: runtime, portCheck: { _ in })
         var profile = try #require(await manager.catalog().first).defaults
         _ = try await manager.load(profile)
         try await waitFor(manager, phase: "loaded")
         profile.servedModelName = "uncertain-model"
-        await runtime.rejectNextLoad(ModelControlError("Runtime connection failed.", code: "runtime_error", status: 503))
+        await runtime.rejectNextLoad(
+            ModelControlError("Runtime connection failed.", code: "runtime_error", status: 503))
         _ = try await manager.load(profile)
         try await waitFor(manager, phase: "error")
         #expect(await manager.routingState().phase == "error")
@@ -59,7 +64,8 @@ struct ModelControlManagerTests {
         let process = FakeControlChild()
         let launches = LaunchRecorder(child: process)
         let runtime = FakeControlRuntime()
-        let manager = ModelControlManager(configuration: fixture.configuration,
+        let manager = ModelControlManager(
+            configuration: fixture.configuration,
             launcher: { launches.launch($0) }, runtime: runtime, portCheck: { _ in })
         var profile = try #require(await manager.catalog().first).defaults
         _ = try await manager.load(profile)
@@ -91,7 +97,8 @@ struct ModelControlManagerTests {
         let fixture = try ControlFixture()
         defer { fixture.remove() }
         let process = FakeControlChild()
-        let manager = ModelControlManager(configuration: fixture.configuration,
+        let manager = ModelControlManager(
+            configuration: fixture.configuration,
             launcher: { _ in process }, runtime: SupersededControlRuntime(), portCheck: { _ in })
         let profile = try #require(await manager.catalog().first).defaults
         _ = try await manager.load(profile)
@@ -128,7 +135,8 @@ struct ModelControlManagerTests {
         profile = model.defaults
         profile.engine = "cuda"
         #expect(throws: ModelControlError.self) { try catalog.validate(profile) }
-        #expect(!FileManager.default.fileExists(atPath: fixture.checkpoint.appendingPathComponent("midnight.json").path))
+        #expect(
+            !FileManager.default.fileExists(atPath: fixture.checkpoint.appendingPathComponent("midnight.json").path))
     }
 
     @Test func catalogDoesNotFollowFoldersOrMetadataOutsideConfiguredRoots() throws {
@@ -136,19 +144,25 @@ struct ModelControlManagerTests {
         defer { fixture.remove() }
         let outside = fixture.root.appendingPathComponent("outside")
         try FileManager.default.copyItem(at: fixture.checkpoint, to: outside)
-        try FileManager.default.createSymbolicLink(at: fixture.models.appendingPathComponent("escaped"), withDestinationURL: outside)
+        try FileManager.default.createSymbolicLink(
+            at: fixture.models.appendingPathComponent("escaped"), withDestinationURL: outside)
         let catalog = ModelControlCatalog(roots: [fixture.models])
         #expect(catalog.models().count == 1)
         try FileManager.default.removeItem(at: fixture.checkpoint.appendingPathComponent("config.json"))
-        try FileManager.default.createSymbolicLink(at: fixture.checkpoint.appendingPathComponent("config.json"), withDestinationURL: outside.appendingPathComponent("config.json"))
+        try FileManager.default.createSymbolicLink(
+            at: fixture.checkpoint.appendingPathComponent("config.json"),
+            withDestinationURL: outside.appendingPathComponent("config.json"))
         #expect(catalog.models().isEmpty)
     }
 
     @Test func metadataAliasesIgnoreBooleansAndHonorCheckpointDefaults() throws {
         let fixture = try ControlFixture()
         defer { fixture.remove() }
-        try Data(#"{"text_config":{"model_type":"mistral","n_layer":8,"max_position_embeddings":true,"seq_length":8192}}"#.utf8)
-            .write(to: fixture.checkpoint.appendingPathComponent("config.json"))
+        try Data(
+            #"{"text_config":{"model_type":"mistral","n_layer":8,"max_position_embeddings":true,"seq_length":8192}}"#
+                .utf8
+        )
+        .write(to: fixture.checkpoint.appendingPathComponent("config.json"))
         try Data(#"{"contextLength":4096,"maximumTokens":128,"prefillStepSize":256,"kvCompression":"affine8"}"#.utf8)
             .write(to: fixture.checkpoint.appendingPathComponent("midnight.json"))
         let model = try #require(ModelControlCatalog(roots: [fixture.models]).models().first)
@@ -167,8 +181,10 @@ struct ModelControlManagerTests {
         let process = FakeControlChild()
         let launches = LaunchRecorder(child: process)
         let gate = ReadinessGate()
-        let manager = ModelControlManager(configuration: fixture.configuration,
-            launcher: { launches.launch($0) }, runtime: FakeControlRuntime(readiness: { _, _, _, _ in await gate.value }), portCheck: { _ in })
+        let manager = ModelControlManager(
+            configuration: fixture.configuration,
+            launcher: { launches.launch($0) },
+            runtime: FakeControlRuntime(readiness: { _, _, _, _ in await gate.value }), portCheck: { _ in })
         var draft = try #require(await manager.catalog().first).defaults
         draft.servedModelName = "a model with spaces"
         let profile = draft
@@ -201,15 +217,19 @@ struct ModelControlManagerTests {
         defer { fixture.remove() }
         let process = FakeControlChild()
         let launches = LaunchRecorder(child: process)
-        let manager = ModelControlManager(configuration: fixture.configuration,
-            launcher: { launches.launch($0) }, runtime: FakeControlRuntime(readiness: { _, _, _, _ in true }), portCheck: { _ in })
+        let manager = ModelControlManager(
+            configuration: fixture.configuration,
+            launcher: { launches.launch($0) }, runtime: FakeControlRuntime(readiness: { _, _, _, _ in true }),
+            portCheck: { _ in })
         let profile = try #require(await manager.catalog().first).defaults
         _ = try await manager.load(profile)
         try await waitFor(manager, phase: "loaded")
         var invalid = profile
         invalid.contextLength = 131073
-        do { _ = try await manager.load(invalid); Issue.record("Invalid reload should fail") }
-        catch { #expect(error is ModelControlError) }
+        do {
+            _ = try await manager.load(invalid)
+            Issue.record("Invalid reload should fail")
+        } catch { #expect(error is ModelControlError) }
         #expect(process.terminations == 0)
         #expect(launches.values.count == 1)
         #expect((await manager.state()).activeProfile == profile)
@@ -221,18 +241,24 @@ struct ModelControlManagerTests {
         defer { fixture.remove() }
         let process = FakeControlChild()
         let launches = LaunchRecorder(child: process)
-        let manager = ModelControlManager(configuration: fixture.configuration,
-            launcher: { launches.launch($0) }, runtime: FakeControlRuntime(readiness: { _, _, _, _ in false }), portCheck: { _ in })
+        let manager = ModelControlManager(
+            configuration: fixture.configuration,
+            launcher: { launches.launch($0) }, runtime: FakeControlRuntime(readiness: { _, _, _, _ in false }),
+            portCheck: { _ in })
         let profile = try #require(await manager.catalog().first).defaults
         _ = try await manager.load(profile)
         for _ in 0..<100 {
             if !launches.values.isEmpty { break }
             try await Task.sleep(for: .milliseconds(5))
         }
-        do { _ = try await manager.load(profile); Issue.record("Concurrent load should fail") }
-        catch let error as ModelControlError { #expect(error.code == "busy") }
-        do { _ = try await manager.unload(); Issue.record("Concurrent unload should fail") }
-        catch let error as ModelControlError { #expect(error.code == "busy") }
+        do {
+            _ = try await manager.load(profile)
+            Issue.record("Concurrent load should fail")
+        } catch let error as ModelControlError { #expect(error.code == "busy") }
+        do {
+            _ = try await manager.unload()
+            Issue.record("Concurrent unload should fail")
+        } catch let error as ModelControlError { #expect(error.code == "busy") }
         #expect(process.terminations == 0)
         #expect((await manager.state()).processID == process.processIdentifier)
         await manager.shutdown()
@@ -246,8 +272,10 @@ struct ModelControlManagerTests {
         configuration.startupTimeout = 0.03
         let process = FakeControlChild()
         process.addLogs(Array(repeating: String(repeating: "x", count: 4000), count: 300))
-        let manager = ModelControlManager(configuration: configuration,
-            launcher: { _ in process }, runtime: FakeControlRuntime(readiness: { _, _, _, _ in false }), portCheck: { _ in })
+        let manager = ModelControlManager(
+            configuration: configuration,
+            launcher: { _ in process }, runtime: FakeControlRuntime(readiness: { _, _, _, _ in false }),
+            portCheck: { _ in })
         let profile = try #require(await manager.catalog().first).defaults
         _ = try await manager.load(profile)
         try await waitFor(manager, phase: "error")
@@ -261,8 +289,10 @@ struct ModelControlManagerTests {
         await manager.shutdown()
 
         let exited = FakeControlChild()
-        let second = ModelControlManager(configuration: fixture.configuration,
-            launcher: { _ in exited }, runtime: FakeControlRuntime(readiness: { _, _, _, _ in true }), portCheck: { _ in })
+        let second = ModelControlManager(
+            configuration: fixture.configuration,
+            launcher: { _ in exited }, runtime: FakeControlRuntime(readiness: { _, _, _, _ in true }),
+            portCheck: { _ in })
         _ = try await second.load(profile)
         try await waitFor(second, phase: "loaded")
         exited.exit(17)
@@ -274,12 +304,22 @@ struct ModelControlManagerTests {
     @Test func occupiedPortAndMissingBinaryDoNotAdoptExternalProcess() async throws {
         let fixture = try ControlFixture()
         defer { fixture.remove() }
-        let manager = ModelControlManager(configuration: fixture.configuration,
-            launcher: { _ in Issue.record("Port conflict must prevent launching"); return FakeControlChild() },
-            runtime: FakeControlRuntime(readiness: { _, _, _, _ in Issue.record("Port conflict must not probe another process"); return true }), portCheck: { _ in throw ModelControlError("Port already in use", code: "port_unavailable", status: 409) })
+        let manager = ModelControlManager(
+            configuration: fixture.configuration,
+            launcher: { _ in
+                Issue.record("Port conflict must prevent launching")
+                return FakeControlChild()
+            },
+            runtime: FakeControlRuntime(readiness: { _, _, _, _ in
+                Issue.record("Port conflict must not probe another process")
+                return true
+            }),
+            portCheck: { _ in throw ModelControlError("Port already in use", code: "port_unavailable", status: 409) })
         let profile = try #require(await manager.catalog().first).defaults
-        do { _ = try await manager.load(profile); Issue.record("Occupied port should fail") }
-        catch let error as ModelControlError { #expect(error.code == "port_unavailable") }
+        do {
+            _ = try await manager.load(profile)
+            Issue.record("Occupied port should fail")
+        } catch let error as ModelControlError { #expect(error.code == "port_unavailable") }
         #expect((await manager.state()).mode == "external")
         #expect((await manager.state()).processID == nil)
         await manager.shutdown()
@@ -289,8 +329,10 @@ struct ModelControlManagerTests {
         let fixture = try ControlFixture()
         defer { fixture.remove() }
         let child = FakeControlChild(ignoreTermination: true)
-        let manager = ModelControlManager(configuration: fixture.configuration,
-            launcher: { _ in child }, runtime: FakeControlRuntime(readiness: { _, _, _, _ in true }), portCheck: { _ in })
+        let manager = ModelControlManager(
+            configuration: fixture.configuration,
+            launcher: { _ in child }, runtime: FakeControlRuntime(readiness: { _, _, _, _ in true }),
+            portCheck: { _ in })
         let profile = try #require(await manager.catalog().first).defaults
         _ = try await manager.load(profile)
         try await waitFor(manager, phase: "loaded")
@@ -307,13 +349,17 @@ struct ModelControlManagerTests {
         let fixture = try ControlFixture()
         defer { fixture.remove() }
         let child = FakeControlChild()
-        let manager = ModelControlManager(configuration: fixture.configuration,
-            launcher: { _ in child }, runtime: FakeControlRuntime(readiness: { _, _, _, _ in true }), portCheck: { _ in })
+        let manager = ModelControlManager(
+            configuration: fixture.configuration,
+            launcher: { _ in child }, runtime: FakeControlRuntime(readiness: { _, _, _, _ in true }),
+            portCheck: { _ in })
         let profile = try #require(await manager.catalog().first).defaults
         _ = try await manager.load(profile)
         try await waitFor(manager, phase: "loaded")
-        do { try await manager.stopOwned(token: UUID()); Issue.record("Stale stop should be cancelled") }
-        catch { #expect(error is CancellationError) }
+        do {
+            try await manager.stopOwned(token: UUID())
+            Issue.record("Stale stop should be cancelled")
+        } catch { #expect(error is CancellationError) }
         #expect(child.terminations == 0)
         #expect(child.forcedTerminations == 0)
         #expect((await manager.state()).phase == "loaded")
@@ -325,8 +371,10 @@ struct ModelControlManagerTests {
         defer { fixture.remove() }
         let child = FakeControlChild()
         let launches = LaunchRecorder(child: child)
-        let manager = ModelControlManager(configuration: fixture.configuration,
-            launcher: { launches.launch($0) }, runtime: FakeControlRuntime(readiness: { _, name, instanceID, processID in
+        let manager = ModelControlManager(
+            configuration: fixture.configuration,
+            launcher: { launches.launch($0) },
+            runtime: FakeControlRuntime(readiness: { _, name, instanceID, processID in
                 #expect(name == "--port=9000")
                 #expect(UUID(uuidString: instanceID) != nil)
                 #expect(instanceID == launches.values.last?.instanceID)
@@ -350,8 +398,10 @@ struct ModelControlManagerTests {
         var configuration = fixture.configuration
         configuration.stopTimeout = 0.2
         let child = FakeControlChild(ignoreTermination: true)
-        let manager = ModelControlManager(configuration: configuration,
-            launcher: { _ in child }, runtime: FakeControlRuntime(readiness: { _, _, _, _ in true }), portCheck: { _ in })
+        let manager = ModelControlManager(
+            configuration: configuration,
+            launcher: { _ in child }, runtime: FakeControlRuntime(readiness: { _, _, _, _ in true }),
+            portCheck: { _ in })
         let profile = try #require(await manager.catalog().first).defaults
         _ = try await manager.load(profile)
         try await waitFor(manager, phase: "loaded")
@@ -373,14 +423,14 @@ struct ModelControlManagerTests {
             } catch let error as ModelControlError { #expect(error.code == "shutting_down") }
         }
         await cleanup.value
-        do { _ = try await manager.load(profile); Issue.record("Shutdown is terminal") }
-        catch let error as ModelControlError { #expect(error.code == "shutting_down") }
+        do {
+            _ = try await manager.load(profile)
+            Issue.record("Shutdown is terminal")
+        } catch let error as ModelControlError { #expect(error.code == "shutting_down") }
         #expect(child.terminations == 1)
         #expect(child.forcedTerminations == 1)
         #expect((await manager.state()).savedProfiles.isEmpty)
     }
-
-
 }
 
 private func waitFor(_ manager: ModelControlManager, phase: String) async throws {
@@ -396,17 +446,22 @@ private struct ControlFixture {
     var models: URL { root.appendingPathComponent("models") }
     var checkpoint: URL { models.appendingPathComponent("Example checkpoint") }
     var configuration: ModelControlConfiguration {
-        var configuration = ModelControlConfiguration(executableURL: URL(fileURLWithPath: "/usr/bin/true"),
+        var configuration = ModelControlConfiguration(
+            executableURL: URL(fileURLWithPath: "/usr/bin/true"),
             modelRoots: [models], stateDirectory: root.appendingPathComponent("state"))
         configuration.pollInterval = 0.005
         configuration.stopTimeout = 0.01
         return configuration
     }
     init() throws {
-        root = FileManager.default.temporaryDirectory.appendingPathComponent("midnight-control-tests-\(UUID().uuidString)")
+        root = FileManager.default.temporaryDirectory.appendingPathComponent(
+            "midnight-control-tests-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: checkpoint, withIntermediateDirectories: true)
-        try Data(#"{"model_type":"gpt_oss","num_hidden_layers":24,"max_position_embeddings":131072,"quantization":{"bits":4,"mode":"mxfp4"}}"#.utf8)
-            .write(to: checkpoint.appendingPathComponent("config.json"))
+        try Data(
+            #"{"model_type":"gpt_oss","num_hidden_layers":24,"max_position_embeddings":131072,"quantization":{"bits":4,"mode":"mxfp4"}}"#
+                .utf8
+        )
+        .write(to: checkpoint.appendingPathComponent("config.json"))
         try Data("metadata".utf8).write(to: checkpoint.appendingPathComponent("model.safetensors"))
     }
     func remove() { try? FileManager.default.removeItem(at: root) }
@@ -424,11 +479,27 @@ private final class FakeControlChild: ModelControlChild, @unchecked Sendable {
     var terminations: Int { lock.withLock { count } }
     var forcedTerminations: Int { lock.withLock { forceCount } }
     func status() -> ModelControlChildStatus { lock.withLock { current } }
-    func terminate() { lock.withLock { count += 1; if !ignoreTermination { current = .exited(0) } } }
-    func forceTerminate() { lock.withLock { forceCount += 1; current = .exited(9) } }
+    func terminate() {
+        lock.withLock {
+            count += 1
+            if !ignoreTermination { current = .exited(0) }
+        }
+    }
+    func forceTerminate() {
+        lock.withLock {
+            forceCount += 1
+            current = .exited(9)
+        }
+    }
     func exit(_ code: Int32) { lock.withLock { current = .exited(code) } }
     func addLogs(_ value: [String]) { lock.withLock { logs += value } }
-    func drainLogs() -> [String] { lock.withLock { let value = logs; logs = []; return value } }
+    func drainLogs() -> [String] {
+        lock.withLock {
+            let value = logs
+            logs = []
+            return value
+        }
+    }
 }
 
 private final class LaunchRecorder: @unchecked Sendable {

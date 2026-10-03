@@ -2,7 +2,7 @@
 set -euo pipefail
 
 STUDIO_ROOT="$(cd "$(dirname "$0")" && pwd -P)"
-STUDIO_CONFIGURATION="${STUDIO_BUILD_CONFIGURATION:-release}"
+STUDIO_CONFIGURATION="${STUDIO_BUILD_CONFIGURATION:-debug}"
 STUDIO_JOBS="${STUDIO_BUILD_JOBS:-2}"
 case "$STUDIO_CONFIGURATION" in
   debug|release) ;;

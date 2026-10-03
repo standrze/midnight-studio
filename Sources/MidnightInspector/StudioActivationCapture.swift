@@ -1,6 +1,8 @@
 import Foundation
 
-/// A bounded, measured residual trace. Playback never issues model requests.
+/// A bounded, measured residual trace.
+///
+/// Playback never issues model requests.
 struct StudioActivationCapture: Sendable {
     struct Token: Decodable, Sendable {
         let id: Int
@@ -128,7 +130,7 @@ struct StudioActivationCaptureClient: Sendable {
         try Task.checkCancellation()
         let response = try await transport(request)
         try Task.checkCancellation()
-        guard response.body.count <= InspectorServer.maximumResponseBytes else {
+        guard response.body.count <= InspectorHTTPClient.maximumResponseBytes else {
             throw ConfigurationError("The activation response exceeded the 8 MiB limit.")
         }
         guard (200..<300).contains(response.status) else {

@@ -5,7 +5,7 @@ import Testing
 struct StudioCommandLineTests {
     @Test func defaultIsTerminal() throws {
         #expect(try StudioInvocation(arguments: []).command == .console)
-        #expect(try StudioInvocation(arguments: ["web"]).command == .web)
+        #expect(throws: ConfigurationError.self) { try StudioInvocation(arguments: ["web"]) }
     }
     @Test func separatesCommandFromConnectionOptions() throws {
         let command = try StudioInvocation(arguments: [

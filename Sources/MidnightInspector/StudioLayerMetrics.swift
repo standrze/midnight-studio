@@ -1,8 +1,9 @@
 import CoreFoundation
 import Foundation
 
-/// Stored tensor bytes grouped by module family. These are checkpoint storage sizes,
-/// not logical parameter counts, activation measurements, or allocated GPU memory.
+/// Stored tensor bytes grouped by module family.
+///
+/// These are checkpoint storage sizes, not logical parameter counts, activation measurements, or allocated GPU memory.
 struct StudioLayerMetrics: Sendable {
     enum Family: CaseIterable, Sendable {
         case attention, convolution, experts, feedForward, other

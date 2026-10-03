@@ -21,9 +21,9 @@ struct ModelControlLaunch: Sendable {
     let instanceID: String
 }
 
-/// One Process object is the ownership boundary. Never searches for or signals an
-/// existing server. A bounded pipe buffer also prevents verbose startup logs from
-/// growing the Inspector's memory indefinitely.
+/// One Process object is the ownership boundary.
+///
+/// Never searches for or signals an existing server. A bounded pipe buffer also prevents verbose startup logs from growing the Inspector's memory indefinitely.
 final class ModelControlProcess: ModelControlChild, @unchecked Sendable {
     private let process: Process
     private let output: Pipe
@@ -45,11 +45,13 @@ final class ModelControlProcess: ModelControlChild, @unchecked Sendable {
         process.standardError = output
         output.fileHandleForReading.readabilityHandler = { [weak self] handle in
             let data = handle.availableData
-            guard !data.isEmpty else { handle.readabilityHandler = nil; return }
+            guard !data.isEmpty else {
+                handle.readabilityHandler = nil
+                return
+            }
             self?.append(data)
         }
-        do { try process.run() }
-        catch {
+        do { try process.run() } catch {
             output.fileHandleForReading.readabilityHandler = nil
             throw error
         }
@@ -79,7 +81,9 @@ final class ModelControlProcess: ModelControlChild, @unchecked Sendable {
     static func requireAvailablePort(_ port: Int) throws {
         guard (1...65535).contains(port) else { throw ModelControlError("The managed server port is invalid.") }
         let descriptor = Darwin.socket(AF_INET, SOCK_STREAM, 0)
-        guard descriptor >= 0 else { throw ModelControlError("Could not check the managed server port.", code: "port_unavailable", status: 503) }
+        guard descriptor >= 0 else {
+            throw ModelControlError("Could not check the managed server port.", code: "port_unavailable", status: 503)
+        }
         defer { Darwin.close(descriptor) }
         var reuse: Int32 = 1
         _ = Darwin.setsockopt(descriptor, SOL_SOCKET, SO_REUSEADDR, &reuse, socklen_t(MemoryLayout<Int32>.size))
@@ -94,7 +98,9 @@ final class ModelControlProcess: ModelControlChild, @unchecked Sendable {
             }
         }
         guard result == 0 else {
-            throw ModelControlError("Port \(port) is already in use. Studio will not replace or attach to that process. Choose another --managed-port when starting Studio.", code: "port_unavailable", status: 409)
+            throw ModelControlError(
+                "Port \(port) is already in use. Studio will not replace or attach to that process. Choose another --managed-port when starting Studio.",
+                code: "port_unavailable", status: 409)
         }
     }
 }

@@ -172,7 +172,7 @@ struct StudioRecordingClient: Sendable {
         try Task.checkCancellation()
         let response = try await transport(request)
         if checkCancellationAfter { try Task.checkCancellation() }
-        guard response.body.count <= InspectorServer.maximumResponseBytes else {
+        guard response.body.count <= InspectorHTTPClient.maximumResponseBytes else {
             throw ConfigurationError("The recording response exceeded the 8 MiB limit.")
         }
         guard (200..<300).contains(response.status) else {

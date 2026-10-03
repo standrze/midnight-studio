@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import MidnightInspector
 
 struct StudioLayoutTests {
@@ -10,34 +11,28 @@ struct StudioLayoutTests {
         let home = root.appendingPathComponent("home")
         try write(root.appendingPathComponent("midnight/Package.swift"))
         let runtime = root.appendingPathComponent("midnight/.build/release/midnight")
-        let quantizer = root.appendingPathComponent("midnight-quantization/.build/debug/model-runner-quantize")
-        let trainer = studio.appendingPathComponent("Workers/.build/release/midnight-studio-worker")
-        for executable in [runtime, quantizer, trainer] { try write(executable, executable: true) }
+        for executable in [runtime] { try write(executable, executable: true) }
 
         let configuration = try InspectorConfiguration(projectDirectory: studio, homeDirectory: home)
         #expect(configuration.midnightBinary == runtime)
-        #expect(configuration.quantizerBinary == quantizer)
-        #expect(configuration.trainerBinary == trainer)
         #expect(configuration.stateDirectory.path == home.appendingPathComponent(".midnight/studio").path)
-        #expect(configuration.studioLibrary.path == home.appendingPathComponent(".midnight/models/studio").path)
-        #expect(configuration.modelRoots.map(\.path) == [
-            home.appendingPathComponent(".midnight/models").path,
-            root.appendingPathComponent("midnight/tmp/models").path,
-        ])
+        #expect(
+            configuration.modelRoots.map(\.path) == [
+                home.appendingPathComponent(".midnight/models").path,
+                root.appendingPathComponent("midnight/tmp/models").path,
+            ])
     }
 
     @Test func installedExecutablesWorkWithoutSiblingBuilds() throws {
         let root = try fixtureRoot()
         defer { try? FileManager.default.removeItem(at: root) }
         let home = root.appendingPathComponent("home")
-        let names = ["midnight-runner", "model-runner-quantize", "midnight-studio-worker"]
+        let names = ["midnight-runner"]
         let executables = names.map { home.appendingPathComponent(".midnight/bin/\($0)") }
         for executable in executables { try write(executable, executable: true) }
         let configuration = try InspectorConfiguration(
             projectDirectory: root.appendingPathComponent("midnight-studio"), homeDirectory: home)
         #expect(configuration.midnightBinary == executables[0])
-        #expect(configuration.quantizerBinary == executables[1])
-        #expect(configuration.trainerBinary == executables[2])
     }
 
     @Test func projectDiscoveryFollowsTheBuiltExecutableFromAnUnrelatedDirectory() throws {
@@ -49,7 +44,8 @@ struct StudioLayoutTests {
         let discovered = InspectorConfiguration.projectRoot(
             currentDirectory: root.appendingPathComponent("elsewhere"),
             executable: studio.appendingPathComponent(".build/arm64-apple-macosx/release/midnight-studio"),
-            sourceFile: root.appendingPathComponent("old-checkout/Sources/MidnightInspector/InspectorConfiguration.swift"))
+            sourceFile: root.appendingPathComponent(
+                "old-checkout/Sources/MidnightInspector/InspectorConfiguration.swift"))
         #expect(discovered.path == studio.path)
     }
 
@@ -65,7 +61,6 @@ struct StudioLayoutTests {
             projectDirectory: runtime.appendingPathComponent("apps/studio"),
             homeDirectory: root.appendingPathComponent("home"))
         #expect(configuration.midnightBinary == binary)
-        #expect(configuration.quantizerBinary.path == root.appendingPathComponent("midnight-quantization/.build/release/model-runner-quantize").path)
     }
 
     private func fixtureRoot() throws -> URL {

@@ -3,7 +3,7 @@ import Foundation
 
 /// Parses terminal commands separately from the existing connection and catalog options.
 struct StudioInvocation {
-    enum Command: String { case console, models, status, inspect, trace, web }
+    enum Command: String { case console, models, status, inspect, trace }
     var command: Command = .console
     var configurationArguments: [String] = []
     var requestFile: String?
@@ -17,7 +17,6 @@ struct StudioInvocation {
         midnight-studio status                  Midnight runtime state as JSON
         midnight-studio inspect                 Model topology as JSON
         midnight-studio trace --request FILE     Capture activations using a JSON request
-        midnight-studio web                     Previous web interface
 
         --midnight-url URL   Midnight origin (default http://127.0.0.1:8080)
         --compare-url URL    Second Midnight origin
